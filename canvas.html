@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Algorytmy Grafowe</title>
+
+    <!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+
+    <!-- Style -->
+    <link href="css/libs/bootstrap.min.css" rel="stylesheet">
+    <link href="css/libs/bootstrap-toggle.min.css" rel="stylesheet">
+    <link href="css/main.css" rel="stylesheet">
+
+    <!--[if lt IE 9]>
+    <script src="https://oss.maxcdn.com/html5shiv/3.7.3/html5shiv.min.js"></script>
+    <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+    <![endif]-->
+
+    <style>
+        .navMenuElement { float: left;
+                    margin: 10px;}
+    </style>
+
+</head>
+<body>
+
+<div class="loader">
+    <div class="loader-bg"></div>
+    <div class="loader-ico">
+        <p>Trwa wczytywanie...</p>
+    </div>
+</div>
+
+<nav class="navbar navbar-default navbar-fixed-top">
+  <div class="container-fluid">
+    <div class="navbar-header">
+      <a class="navbar-brand" href="#">Algorytymy Grafowe Toolbar</a>
+    </div>
+
+    <div class="navMenuElement">
+        <div class="sidebar-text navMenuElement">
+            Wierzchołków: <span id="counterVertex" class="label label-primary sidebar-badge">0</span>
+        </div>
+        <div class="sidebar-text navMenuElement">
+            Krawędzi: <span id="counterEdge" class="label label-success sidebar-badge">0</span>
+        </div>
+        <div class="sidebar-text navMenuElement">
+            Drzew: <span id="counterTrees" class="label label-default sidebar-badge">0</span>
+        </div>
+        <div class="sidebar-text navMenuElement" id="lowCohesion">
+            Słabo spójny:&nbsp;
+            <span class="label label-default sidebar-badge">&nbsp;</span>
+        </div>
+    </div>
+
+    <button class="btn btn-default navbar-btn navMenuElement" id="transposeGraph">Transponuj Graf</button>
+    <button class="btn btn-default navbar-btn navMenuElement" id="topologicalSort">Sortowanie Topologiczne</button>
+    <button class="btn btn-default navbar-btn navMenuElement" id="test">Test merge vertices</button>
+
+  </div>
+</nav>
+
+<div class="container-fluid">
+    <div class="row" style="margin-top: 50px;">
+        <div class="col-md-3">
+            <div class="page-header">
+                <h2>Menu</h2>
+            </div>
+        </div>
+        <div class="col-md-9">
+            <div class="page-header">
+                <h2>Pole grafu</h2>
+            </div>
+        </div>
+        <div class="clearfix"></div>
+    </div>
+    <div class="row">
+        <div class="col-md-3 panels-collapsed">
+            <!-- Przyciski kontroli zakładek -->
+            <button id="collapse-all" type="button" class="btn btn-default btn-sm pull-left">
+                <span class="glyphicon glyphicon-resize-small" aria-hidden="true"></span> Zwiń wszystkie
+            </button>
+            <button id="expand-all" type="button" class="btn btn-default btn-sm pull-right">
+                <span class="glyphicon glyphicon-fullscreen" aria-hidden="true"></span> Rozwiń wszystkie
+            </button>
+            <div class="clearfix buttons-separator"></div>
+
+            <!-- Historia -->
+            <div class="panel panel-default">
+                <div class="panel-heading" data-toggle="collapse" data-target="#collapse-history">
+                    <h3 class="panel-title">Historia</h3>
+                </div>
+                <div id="collapse-history" class="panel-collapse collapse">
+                    <div class="panel-body panel-btns">
+                        <!-- Wstecz -->
+                        <p class="col-md-4">
+                            <button id="goPrevious" type="button" disabled="disabled" class="btn btn-default">Wstecz</button>
+                        </p>
+                        <!-- Wstecz -->
+                        <p class="col-md-4">
+                            Aktualny krok: <span class="actualStepHistory">1</span> / <span class="savedStepsHistory">1</span>
+                        </p>
+                        <!-- Dalej -->
+                        <p class="col-md-4">
+                            <button id="goNext" type="button" disabled="disabled" class="btn btn-default">Dalej</button>
+                        </p>
+                    </div>
+                </div>
+            </div>
+            <!-- Panel akcji -->
+            <div class="panel panel-default">
+                <div class="panel-heading" data-toggle="collapse" data-target="#collapse-actions">
+                    <h3 class="panel-title">Dostępne akcje</h3>
+                </div>
+                <div id="collapse-actions" class="panel-collapse collapse in">
+                    <div class="panel-body panel-btns">
+                        <!-- Przełącznik trybu edycji -->
+                        <p>
+                            <label>
+                                <input id="triggerEditMode" type="checkbox" data-toggle="toggle"
+                                       data-on="Włączony" data-off="Wyłączony"
+                                       data-onstyle="success" data-offstyle="primary">
+                            </label>
+                            <span class="sidebar-label sidebar-text">Tryb edycji</span>
+                        </p>
+                        <!-- Przełącznik rodzaju grafu -->
+                        <p>
+                            <label>
+                                <input id="triggerGraphType" type="checkbox" data-toggle="toggle"
+                                       data-on="Skierowany" data-off="Nieskierowany"
+                                       data-onstyle="success" data-offstyle="primary">
+                            </label>
+                            <span class="sidebar-label sidebar-text">Rodzaj grafu</span>
+                        </p>
+                        <!-- Przełącznik siatki na canvas -->
+                        <p>
+                            <label>
+                                <input id="triggerWeb" type="checkbox" data-toggle="toggle"
+                                       data-on="Włączone" data-off="Wyłączone"
+                                       data-onstyle="success" data-offstyle="primary">
+                            </label>
+                            <span class="sidebar-label sidebar-text">Linie siatki</span>
+                        </p>
+                        <!-- Zapisz graf -->
+                        <p>
+                            <!-- Zapis parametrów -->
+                            <button id="saveGraph" type="button" class="btn btn-default">
+                                <span class="glyphicon glyphicon-floppy-save" aria-hidden="true"></span> Zapisz Graf do pliku
+                            </button>
+
+                            <!-- Zdjecie Grafu -->
+                            <button id="saveImageGraph" type="button" class="btn btn-default">
+                                <span class="glyphicon glyphicon-picture" aria-hidden="true"></span> Zdjecie Grafu
+                            </button>
+                        </p>
+                        <!-- Wczytaj graf -->
+                        <p>
+                            <input id="loadGraph" type='file' accept='text/plain' >
+                            <div id="output"></div>
+                        </p>
+                    </div>
+                </div>
+            </div>
+            <!-- Przeszukiwanie -->
+            <div class="panel panel-default">
+                <div class="panel-heading" data-toggle="collapse" data-target="#collapse-search">
+                    <h3 class="panel-title">Przeszukiwanie grafu</h3>
+                </div>
+                <div id="collapse-search" class="panel-collapse collapse in">
+                    <div class="panel-body panel-btns">
+                        <!-- Przełącznik trybu wyszukiwania -->
+                        <p>
+                            <label>
+                                <input id="triggerSearchMode" type="checkbox" data-toggle="toggle"
+                                       data-on="Tak" data-off="Nie"
+                                       data-onstyle="success" data-offstyle="primary">
+                                <!-- Tutaj był span pierwotnie -->
+                                <!-- <span class="sidebar-label sidebar-text">WYŚWIETLANIE</span> -->
+                            </label>
+                            <span class="sidebar-label sidebar-text">WYŚWIETLANIE</span>
+                        </p>
+                        <!-- Przełącznik algorytmu wyszukiwania -->
+                        <p>
+                            <label>
+                                <input id="triggerSearchAlgorithm" type="checkbox" data-toggle="toggle"
+                                       data-on="DFS (wgłąb)" data-off="BFS (wszerz)"
+                                       data-onstyle="success" data-offstyle="primary">
+                            </label>
+                            <span class="sidebar-label sidebar-text">TYP ALGORYTMU</span>
+                        </p>
+                    </div>
+                </div>
+            </div>
+            <!-- Obszar grafu / Siatki -->
+            <div class="panel panel-default">
+                <div class="panel-heading" data-toggle="collapse" data-target="#collapse-space">
+                    <h3 class="panel-title">Obszar Grafu / Siatki</h3>
+                </div>
+                <div id="collapse-space" class="panel-collapse collapse">
+                    <div class="panel-body panel-btns">
+                        <!-- SZEROKOŚĆ -->
+                        <div class="col-md-6 panel-padding">
+                            <div class="input-group">
+                                    <span class="input-group-btn">
+                                        <button type="button" class="btn btn-default btn-number" data-type="minus"
+                                                data-field="webWidth">
+                                            <span class="glyphicon glyphicon-minus"></span>
+                                        </button>
+                                    </span>
+                                <input type="text" id="webWidth" name="webWidth" class="form-control input-number" value="1400" min="700" max="15000">
+                                <span class="input-group-btn">
+                                        <button type="button" class="btn btn-default btn-number" data-type="plus" data-field="webWidth">
+                                            <span class="glyphicon glyphicon-plus"></span>
+                                        </button>
+                                    </span>
+                            </div>
+                        </div>
+                        <div class="col-md-6 panel-padding">
+                            <div class="sidebar-label sidebar-text">
+                                SZEROKOŚĆ <br>
+                                <p class="number-limit">(min: <b>700</b>, max: <b>15000</b>)</p>
+                            </div>
+                        </div>
+                        <div class="clearfix"></div>
+                        <!-- WYSOKOŚĆ -->
+                        <div class="col-md-6 panel-padding">
+                            <div class="input-group">
+                                <span class="input-group-btn">
+                                    <button type="button" class="btn btn-default btn-number" data-type="minus"
+                                            data-field="webHeight">
+                                        <span class="glyphicon glyphicon-minus"></span>
+                                    </button>
+                                </span>
+                                <input type="text" id="webHeight" name="webHeight" class="form-control input-number" value="800" min="400" max="15000">
+                                <span class="input-group-btn">
+                                    <button type="button" class="btn btn-default btn-number" data-type="plus" data-field="webHeight">
+                                        <span class="glyphicon glyphicon-plus"></span>
+                                    </button>
+                                </span>
+                            </div>
+                        </div>
+                        <div class="col-md-6 panel-padding">
+                            <div class="sidebar-label sidebar-text">
+                                WYSOKOŚĆ <br>
+                                <p class="number-limit">(min: <b>400</b>, max: <b>15000</b>)</p>
+                            </div>
+                        </div>
+                        <div class="clearfix"></div>
+                        <!-- INTERWAŁ -->
+                        <div class="col-md-6 panel-padding">
+                            <div class="input-group">
+                                <span class="input-group-btn">
+                                    <button type="button" class="btn btn-default btn-number" data-type="minus"
+                                            data-field="webInterval">
+                                        <span class="glyphicon glyphicon-minus"></span>
+                                    </button>
+                                </span>
+                                <input type="text" id="webInterval" name="webInterval" class="form-control input-number" value="50" min="50" max="250">
+                                <span class="input-group-btn">
+                                    <button type="button" class="btn btn-default btn-number" data-type="plus" data-field="webInterval">
+                                        <span class="glyphicon glyphicon-plus"></span>
+                                    </button>
+                                </span>
+                            </div>
+                        </div>
+                        <div class="col-md-6 panel-padding">
+                            <div class="sidebar-label sidebar-text">
+                                INTERWAŁ <br>
+                                <p class="number-limit">(min: <b>50</b>, max: <b>250</b>)</p>
+                            </div>
+                        </div>
+                        <div class="clearfix"></div>
+                    </div>
+                </div>
+            </div>
+            <!-- Losowanie grafu -->
+            <div class="panel panel-default">
+                <div class="panel-heading" data-toggle="collapse" data-target="#collapse-randomize">
+                    <h3 class="panel-title">Generowanie grafu</h3>
+                </div>
+                <div id="collapse-randomize" class="panel-collapse collapse">
+                    <div class="panel-body panel-btns">
+                        <div class="col-md-6 panel-padding">
+                            <div class="input-group">
+                                <span class="input-group-btn">
+                                    <button type="button" class="btn btn-default btn-number" data-type="minus"
+                                            data-field="randomVertices">
+                                        <span class="glyphicon glyphicon-minus"></span>
+                                    </button>
+                                </span>
+                                <input type="text" id="randomVertices" name="randomVertices" class="form-control input-number" value="6" min="1" max="25">
+                                <span class="input-group-btn">
+                                    <button type="button" class="btn btn-default btn-number" data-type="plus" data-field="randomVertices">
+                                        <span class="glyphicon glyphicon-plus"></span>
+                                    </button>
+                                </span>
+                            </div>
+                        </div>
+                        <div class="col-md-6 panel-padding">
+                            <div class="sidebar-label sidebar-text">
+                                WIERZCHOŁKÓW <br>
+                                <p class="number-limit">(min: <b id="randomVerticesMin">1</b>, max: <b id="randomVerticesMax">25</b>)</p>
+                            </div>
+                        </div>
+                        <div class="clearfix"></div>
+                        <div class="col-md-6 panel-padding">
+                            <div class="input-group">
+                            <span class="input-group-btn">
+                                <button type="button" class="btn btn-default btn-number" data-type="minus"
+                                        data-field="randomEdges">
+                                    <span class="glyphicon glyphicon-minus"></span>
+                                </button>
+                            </span>
+                                <input type="text" id="randomEdges" name="randomEdges" class="form-control input-number" value="6" min="0" max="15">
+                                <span class="input-group-btn">
+                                <button type="button" class="btn btn-default btn-number" data-type="plus" data-field="randomEdges">
+                                    <span class="glyphicon glyphicon-plus"></span>
+                                </button>
+                            </span>
+                            </div>
+                        </div>
+                        <div class="col-md-6 panel-padding">
+                            <div class="sidebar-label sidebar-text">
+                                KRAWĘDZI <br>
+                                <p class="number-limit">(min: <b id="randomEdgesMin">0</b>, max: <b id="randomEdgesMax">15</b>)</p>
+                            </div>
+                        </div>
+                        <div class="clearfix"></div>
+                        <!-- Losowanie -->
+                        <p>
+                            <button id="randomGraph" type="button" class="btn btn-default">
+                                <span class="glyphicon glyphicon-random" aria-hidden="true"></span> Wylosuj Graf
+                            </button>
+                        </p>
+                    </div>
+                </div>
+            </div>
+            <!-- Panel statystyk -->
+            <div class="panel panel-default">
+                <div class="panel-heading" data-toggle="collapse" data-target="#collapse-stats">
+                    <h3 class="panel-title">Przeszukiwanie</h3>
+                </div>
+                <div id="collapse-stats" class="panel-collapse collapse in">
+                    <div class="panel-body">
+
+<!--                         <p class="sidebar-text">
+                            Wierzchołków: <span id="counterVertex" class="label label-primary sidebar-badge">0</span>
+                        </p>
+                        <p class="sidebar-text">
+                            Krawędzi: <span id="counterEdge" class="label label-success sidebar-badge">0</span>
+                        </p>
+                        <p class="sidebar-text">
+                            Drzew: <span id="counterTrees" class="label label-default sidebar-badge">0</span>
+                        </p>
+                        <p class="sidebar-text" id="lowCohesion">
+                            Słabo spójny:&nbsp;
+                            <span class="label label-default sidebar-badge">&nbsp;</span>
+                        </p> -->
+
+                        <div class="sidebar-text" id="visitedListBFS">
+                            BFS:&nbsp;
+                            <ul class="listCase">
+                                <li>
+                                    <div>Odwiedzone (wierzchołki)</div>
+                                    <ul class="visitedCase list-inline">
+                                    </ul>
+                                </li>
+                                <li>
+                                    <div>Drzewa (krawędzie)</div>
+                                    <ul class="treesCase">
+                                    </ul>
+                                </li>
+                            </ul>
+                        </div>
+                        <div class="sidebar-text" id="visitedListDFS">
+                            DFS:&nbsp;
+                            <ul class="listCase">
+                                <li>
+                                    <div>Odwiedzone (wierzchołki)</div>
+                                    <ul class="visitedCase list-inline">
+                                    </ul>
+                                </li>
+                                <li>
+                                    <div>Przetworzone (wierzchołki)</div>
+                                    <ul class="processedCase list-inline">
+                                    </ul>
+                                </li>
+                                <li>
+                                    <div>Drzewa (krawędzie)</div>
+                                    <ul class="treesCase">
+                                    </ul>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Kontener z Canvas -->
+        <div class="col-md-9">
+
+            <div class="alert alert-modified alert-info alert-dismissible fade in" role="alert">
+                <div class="row">
+                    <div class="col-md-11">
+                        <div class="alert-title">Skróty klawiszowe</div>
+                        <div class="row">
+                            <div class="col-md-4">
+                                <b>W,S,A,D</b> lub <b>strzałki</b> - przesuwanie widoku
+                            </div>
+                            <div class="col-md-4">
+                                <b>Z,C</b> - przybliżanie/oddalanie widoku
+                            </div>
+                            <div class="col-md-4">
+                                <b>R</b> - losowanie grafu.
+                            </div>
+                            <div class="clearfix"></div>
+                        </div>
+                    </div>
+                    <div class="col-md-1">
+                        <button type="button" id="closeInfo" class="close" aria-label="Zamknij">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="canvas"></div>
+            <div id="canvasMap"></div>
+
+            <div class="clearfix"></div>
+
+            <div id="flash" class="alert alert-modified alert-success alert-dismissible fade in" role="alert">
+                <div class="row">
+                    <div class="col-md-12">
+                        <div class="flashTitle alert-title">Interaktywna pomoc</div>
+                        <div class="flashText">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <h2 class="sub-header">Reprezentacje grafu</h2>
+            <div class="row stats">
+                <div class="col-md-12">
+                    <div class="panel panel-default">
+                        <div class="panel-heading">
+                            <ul class="nav nav-pills">
+                                <li role="presentation" class="active">
+                                    <a data-destination="neighbourMatrix">Macierz przyległości (sąsiedztwa)</a>
+                                </li>
+                                <li role="presentation">
+                                    <a data-destination="incidenceMatrix">Macierz incydencji</a>
+                                </li>
+                                <li role="presentation">
+                                    <a data-destination="verticesList">Lista wierzchołków sąsiednich</a>
+                                </li>
+                                <li role="presentation">
+                                    <a data-destination="edgesList">Lista krawędzi</a>
+                                </li>
+                            </ul>
+                        </div>
+                        <div class="panel-body">
+                            <table class="table table-responsive table-striped active-data" id="neighbourMatrix"></table>
+                            <table class="table table-responsive table-striped" id="incidenceMatrix"></table>
+                            <table class="table table-responsive table-striped" id="verticesList"></table>
+                            <span id="edgesList"></span>
+                        </div>
+                    </div>
+                </div>
+                <div class="clearfix"></div>
+            </div>
+        </div>
+        <div class="clearfix"></div>
+    </div>
+</div>
+
+<!-- biblioteka do formatu daty -->
+<script src="js/libs/dateFormat.min.js"></script>
+
+<!-- definicja przestrzenii nazw -->
+<script src="js/namespace.js"></script>
+
+<!-- Assety i elementy statyczne -->
+<script src="js/assets.js"></script>
+<script src="js/static.js"></script>
+
+<!-- Tworzenie canvas i przechowywanie -->
+<script src="js/canvas/canvas.js"></script>
+
+<!-- Elementy GUI -->
+<script src="js/gui/guiLoader.js"></script>
+<script src="js/gui/guiHistory.js"></script>
+<script src="js/gui/guiFlash.js"></script>
+<script src="js/gui/guiRandom.js"></script>
+<script src="js/gui/guiTabs.js"></script>
+<script src="js/gui/guiDirection.js"></script>
+<script src="js/gui/guiStats.js"></script>
+<script src="js/gui/guiEdit.js"></script>
+<script src="js/gui/guiFileUpload.js"></script>
+<script src="js/gui/guiTopologicalSort.js"></script>
+<script src="js/gui/structures/guiEdgesList.js"></script>
+<script src="js/gui/structures/guiVerticesList.js"></script>
+<script src="js/gui/structures/guiIncidenceMatrix.js"></script>
+<script src="js/gui/structures/guiNeighbourMatrix.js"></script>
+<script src="js/gui/algorithms/guiSearch.js"></script>
+<script src="js/gui/algorithms/dispelGraph.js"></script>
+
+<!-- Siatka na canvas -->
+<script src="js/canvas/web.js"></script>
+
+<!-- Definicje graficzne Grafu -->
+<script src="js/graphElements/vertex.js"></script>
+<script src="js/graphElements/edge.js"></script>
+<script src="js/graphElements/arrow.js"></script>
+
+<!-- Obiekty pomocnicze do rysowania / edycji -->
+<script src="js/graphControls/deleteButton.js"></script>
+<script src="js/graphControls/searchLabel.js"></script>
+
+<!-- Opis i obsługa grafu -->
+<script src="js/graph.js"></script>
+
+<!-- Reprezentacje grafu -->
+<script src="js/graphStructures/neighbourMatrix.js"></script>
+<script src="js/graphStructures/incidenceMatrix.js"></script>
+<script src="js/graphStructures/verticesList.js"></script>
+<script src="js/graphStructures/edgesList.js"></script>
+
+<!-- Zarządzanie strukturami grafu (zlecanie aktualizacji, budowania) -->
+<script src="js/structuresManager.js"></script>
+
+<!-- Pomocnicze struktury dla algorytmów -->
+<script src="js/algorithms/helpStructures/edgeTree.js"></script>
+
+<!-- Algorytmy -->
+<script src="js/algorithms/search/bfs.js"></script>
+<script src="js/algorithms/search/dfs.js"></script>
+<script src="js/algorithms/transformation/transposeGraph.js"></script>
+<script src="js/algorithms/transformation/mergeVertices.js"></script>
+
+<!-- Listener - nasłuchiwanie zmian w Grafie -->
+<script src="js/listener.js"></script>
+
+<!-- Moduł UPLOAD/DOWNLOAD plików -->
+<script src="js/files/download.js"></script>
+<script src="js/files/upload.js"></script>
+
+<!-- Obsługa zdarzeń w Canvasie -->
+<script src="js/canvas/canvasEvents.js"></script>
+
+<!-- Obsługa zdarzeń GUI -->
+<script src="js/events.js"></script>
+<script src="js/keyboardControl.js"></script>
+
+<!-- Budowniczy grafu (z obiektu/pliku LUB losowo) -->
+<script src="js/graphBuilders/objectBuilder.js"></script>
+<script src="js/graphBuilders/randomBuilder.js"></script>
+<script src="js/graphModifiers/modifier.js"></script>
+
+<!-- Obsługa animacji w Canvasie -->
+<script src="js/canvas/canvasAnimation.js"></script>
+
+<!-- Obsługa Historii -->
+<script src="js/history.js"></script>
+
+<!-- biblioteki do GUI -->
+<script src="js/libs/bootstrap.min.js"></script>
+<script src="js/libs/bootstrap-toggle.js"></script>
+<script src="js/libs/bootstrapMinusPlus.js"></script>
+
+</body>
+</html>
